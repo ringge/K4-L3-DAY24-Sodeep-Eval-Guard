@@ -12,6 +12,8 @@ langchain-openai>=0.1,<0.2
 datasets>=2.19,<3
 openai>=1.30,<2
 numpy>=1.26,<2
+# PyArrow 26 requires NumPy 2; retain the lab's NumPy 1.x stack.
+pyarrow==19.0.1
 
 # ── Track 3A: LLM Judge ────────────────────────────────────────────────────
 scipy>=1.11,<2                   # Scientific dependencies; κ can be computed manually
