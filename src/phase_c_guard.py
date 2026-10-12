@@ -12,6 +12,12 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import ADVERSARIAL_SET_PATH, GUARDRAILS_CONFIG_DIR, LATENCY_BUDGET_P95_MS, PRESIDIO_LANGUAGE
 
+# Identifier types required by this lab. The English NLP model cannot reliably
+# classify Vietnamese names; unrelated NER and country-specific entities must
+# not turn ordinary policy questions into PII blocks. NeMo handles requests for
+# personal records and confidential information separately.
+PII_ENTITIES = ("VN_CCCD", "VN_PHONE", "PHONE_NUMBER", "EMAIL_ADDRESS")
+
 
 # ─── Task 9a: Presidio PII Detection ─────────────────────────────────────────
 
@@ -50,7 +56,10 @@ def setup_presidio():
 
 
 def pii_scan(text: str, analyzer=None, anonymizer=None) -> dict:
-    """Task 9a: Quét PII trong văn bản bằng Presidio.
+    """Task 9a: Scan CCCD/CMND, phone numbers and email using Presidio.
+
+    Restrict detection to identifier types supported by the lab's PII policy;
+    English PERSON predictions on Vietnamese text are not reliable name checks.
 
     Returns:
         {
@@ -62,7 +71,9 @@ def pii_scan(text: str, analyzer=None, anonymizer=None) -> dict:
     if analyzer is None or anonymizer is None:
         analyzer, anonymizer = setup_presidio()
 
-    results = analyzer.analyze(text=text, language=PRESIDIO_LANGUAGE)
+    results = analyzer.analyze(
+        text=text, language=PRESIDIO_LANGUAGE, entities=list(PII_ENTITIES)
+    )
     if not results:
         return {"has_pii": False, "entities": [], "anonymized": text}
 
@@ -162,7 +173,7 @@ def run_adversarial_suite(adversarial_set: list[dict], rails=None,
     """Task 10: Chạy 20 adversarial inputs qua full guard stack, so sánh với expected.
 
     Guard stack order:
-        1. pii_scan()         → block nếu has_pii (cho category pii_injection)
+        1. pii_scan()         → block nếu has_pii, independent of category/expected
         2. check_input_rail() → block nếu jailbreak / off-topic / prompt injection
 
     Returns:

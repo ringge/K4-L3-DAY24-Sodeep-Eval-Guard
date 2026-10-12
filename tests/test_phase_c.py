@@ -16,11 +16,13 @@ pytestmark = pytest.mark.student
 
 @pytest.fixture
 def pii_engines():
-    def analyze(*,text,language):
+    def analyze(*,text,language,entities):
         rows=[]
         for kind,pattern in [("VN_CCCD",r"\b(?:\d{12}|\d{9})\b"),
                              ("VN_PHONE",r"\b0[3-9]\d{8}\b"),
                              ("EMAIL_ADDRESS",r"[\w.]+@[\w.]+")]:
+            if kind not in entities:
+                continue
             for match in re.finditer(pattern,text):
                 rows.append(SimpleNamespace(entity_type=kind,start=match.start(),
                                             end=match.end(),score=.9))
@@ -48,6 +50,36 @@ def test_pii_clean(pii_engines):
     result=phase.pii_scan(text,*pii_engines)
     assert result=={"has_pii":False,"entities":[],"anonymized":text}
     pii_engines[0].analyze.assert_called_once()
+
+
+@pytest.mark.parametrize("identifier", [None, "VN_CCCD", "VN_PHONE", "PHONE_NUMBER", "EMAIL_ADDRESS"])
+def test_pii_scope_excludes_foreign_and_english_ner_false_positives(identifier):
+    text="Ngày phép theo v2024; identifier"
+    identifier_start=text.index("identifier")
+    detections=[
+        SimpleNamespace(entity_type="PERSON",start=0,end=len("Ngày phép"),score=.85),
+        SimpleNamespace(entity_type="US_DRIVER_LICENSE",start=text.index("v2024"),end=text.index("v2024")+5,score=.3),
+    ]
+    if identifier:
+        detections.append(SimpleNamespace(entity_type=identifier,start=identifier_start,end=len(text),score=.9))
+    analyzer=SimpleNamespace(analyze=Mock(side_effect=lambda *,text,language,entities: [
+        row for row in detections if row.entity_type in entities]))
+    anonymizer=SimpleNamespace(anonymize=Mock(return_value=SimpleNamespace(text="redacted")))
+
+    result=phase.pii_scan(text,analyzer,anonymizer)
+
+    assert set(analyzer.analyze.call_args.kwargs["entities"]) == {
+        "VN_CCCD", "VN_PHONE", "PHONE_NUMBER", "EMAIL_ADDRESS"}
+    assert result["has_pii"] is bool(identifier)
+    assert [row["type"] for row in result["entities"]] == ([identifier] if identifier else [])
+    if identifier:
+        assert result["entities"][0]["start"]==identifier_start
+        assert result["entities"][0]["end"]==len(text)
+        assert result["entities"][0]["text"]=="identifier"
+        anonymizer.anonymize.assert_called_once()
+    else:
+        assert result["anonymized"]==text
+        anonymizer.anonymize.assert_not_called()
 
 
 @pytest.mark.parametrize("blocked",[True,False])
