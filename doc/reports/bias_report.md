@@ -1,8 +1,8 @@
 # Đánh giá LLM Judge Phase B
 
-Nhóm: Sodeep (`K4-L3-DAY24-Sodeep-Eval-Guard`)
+Nhóm: Sodeep
 
-Người phụ trách: Bùi Tiến Cường (`Bui Tien Cuong`)
+Người phụ trách: Bùi Tiến Cường - 2A202602539
 
 Nguồn: `artifacts/judge_results.json`; run timestamp: `2026-10-12T05:16:36.812714+00:00`.
 Models generation/judge: `metadata.models.generation = ["gpt-6-luna"]` và `metadata.models.judge = ["gpt-6-luna"]`.
