@@ -76,7 +76,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 
 - Phần được giao và phần thực tế đã làm: Import các module m1-m5 và chỉnh sửa các contracts đảm bảo tương thích với repo này, sinh answers_50q.json. Phụ trách tích hợp các phần đóng góp của nhóm, chạy thực nghiệm Phase C (Guardrails) bằng mã nguồn `src/phase_c_guard.py` do Đinh Kim Thái triển khai và nộp link repo chung. Chạy bộ kiểm tra input gồm 20 adversarial và 8 clean cases, kiểm tra 4 output cases và đo latency các tầng input để tạo `artifacts/guard_results.json`; biên soạn `doc/reports/blueprint.md` từ bằng chứng A/B/C, đề xuất kiến trúc bảo vệ RAG, CI gates, monitoring và hướng cải tiến. Phần đóng góp này là vận hành thực nghiệm, tổng hợp và phân tích kết quả, không nhận phần triển khai Tasks 9a–12 của Đinh Kim Thái.
 - Bằng chứng: Commit `0ca9880` — `feat: add phase c run with artifacts and blueprint.md`, chứa artifact `artifacts/guard_results.json` và báo cáo `doc/reports/blueprint.md`; commit tích hợp `14f8586`. Artifact C ghi `run_kind=live`, guard model `gpt-6-luna`, timestamp UTC `2026-10-12T08:16:42.104370+00:00` và SHA-256 của ba fixtures input/output.
-- Cách kiểm tra: Lệnh chạy thực nghiệm Phase C: `python scripts/run_experiments.py --phase c --live --latency-samples 20`. Artifact đã lưu ghi nhận adversarial đạt 20/20, clean đạt 8/8 (`false_positive_rate=0.0`), output đạt 4/4; hai output sạch giữ nguyên answer và hai output nhạy cảm được thay bằng refusal. Phép đo `input_layers_sequential` có 20 timed samples, loại 2 warm-up; P95 input guard là 4722.166 ms, vượt budget 500 ms (`latency_budget_ok=false`). Kiểm tra lại bằng `.venv/bin/python scripts/check_lab.py` xác nhận `PASS Phase C artifact` và `PASS doc/reports/blueprint.md`; toàn bộ checker vẫn chưa đạt vì `doc/TEAM.md` còn placeholders. Lần kiểm tra tài liệu này chỉ đọc artifact đã lưu, không chạy lại API có phí.
+- Cách kiểm tra: Lệnh chạy thực nghiệm Phase C: `python scripts/run_experiments.py --phase c --live --latency-samples 20`. Artifact đã lưu ghi nhận adversarial đạt 20/20, clean đạt 8/8 (`false_positive_rate=0.0`), output đạt 4/4; hai output sạch giữ nguyên answer và hai output nhạy cảm được thay bằng refusal. Phép đo `input_layers_sequential` có 20 timed samples, loại 2 warm-up; P95 input guard là 4722.166 ms, vượt budget 500 ms (`latency_budget_ok=false`). Trong lần kiểm tra trước bằng `.venv/bin/python scripts/check_lab.py`, checker xác nhận `PASS Phase C artifact` và `PASS doc/reports/blueprint.md`; tại thời điểm đó toàn bộ checker chưa đạt vì `doc/TEAM.md` còn placeholders. Lần kiểm tra tài liệu đó chỉ đọc artifact đã lưu, không chạy lại API có phí.
 - Điều đã học: Phân biệt triển khai hàm với chạy thực nghiệm và lưu bằng chứng; đánh giá guard cần cả adversarial, clean controls và output cases để tránh kết luận chỉ từ số lượt chặn. P95 của tổng input guard phải tính từ tổng latency từng sample, không cộng P95 riêng của Presidio và NeMo. Phạm vi input-layer latency không phải full guard hay end-to-end RAG; hợp đồng artifact đạt không đồng nghĩa quality/performance gates đều đạt.
 - Giới hạn/cách xử lý: Bộ safety 20/8/4 cases và 20 latency samples chỉ phản ánh một batch, chưa chứng minh bao phủ traffic thật hoặc sẵn sàng production. NeMo input có P95 4712.893 ms, là tầng chậm nhất trong phép đo; giữ nguyên kết quả vượt budget và đề xuất tracing, thử model guard nhanh hơn, mở rộng phép đo ít nhất 100 samples theo từng đường xử lý rồi kiểm tra lại safety. Chưa đo RAG, NeMo output latency, full guard hay concurrency; CI/CD và monitoring trong blueprint là đề xuất, chưa triển khai. Presidio hiện tập trung identifiers, chưa nhận diện tên người Việt; yêu cầu dữ liệu cá nhân được xử lý thêm bằng NeMo.
 - Nguồn/AI hỗ trợ nếu có: Dùng mã nguồn và fixtures trong repo, metadata/kết quả tại `artifacts/guard_results.json` cùng các artifacts A/B làm nguồn đối chiếu cho báo cáo.
@@ -98,6 +98,48 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 - Điều đã học: số câu 20/20/10 là kích thước nhóm, không phải mức chất lượng; nhóm yếu nhất phải chọn theo mean thấp nhất. Metric thấp nhất chỉ định hướng chẩn đoán, còn nguyên nhân cần đọc answer, contexts và reference; model generation và evaluator phải ghi tách vai trò.
 - Giới hạn/cách xử lý: nhóm adversarial có 10 câu và mean 0.7211 chỉ thấp hơn multi_hop 0.7283 khoảng 0.0072; báo cáo phân tích từng ID thay vì coi chênh lệch nhỏ là kết luận chắc chắn. Hash bytes của hai file nguồn hiện tại khác metadata do xuống dòng CRLF trên Windows; sau khi chuẩn hóa về LF, cả hai hash khớp artifact.
 - Nguồn/AI hỗ trợ nếu có: Codex hỗ trợ triển khai Tasks 1–4, điền báo cáo và rà soát số liệu; kiểm tra lại bằng mã nguồn, `ragas_50q.json`, `answers_50q.json` và các trường hợp bottom 10.
+
+### DinhKimThai-2A202602417
+
+- Phần được giao và phần thực tế đã làm: Phase C, Tasks 9a–12; hoàn thiện
+  5 hàm TODO trong `src/phase_c_guard.py`: `pii_scan` gọi Presidio để phát hiện
+  và redact CCCD/CMND, số điện thoại, email; `check_input_rail` và
+  `check_output_rail` gọi NeMo async, đọc quyết định `activated_rails[].stop`,
+  giữ nguyên output sạch hoặc thay thế output bị chặn; `run_adversarial_suite`
+  kết hợp hai tầng input và ghi kết quả từng câu; `measure_p95_latency` thu thập
+  thời gian Presidio, NeMo input và tổng input guard, loại 2 lượt warm-up rồi
+  dùng helper `summarize_latency` có sẵn để tính percentile tuyến tính.
+  Cấu hình, prompts, recognizers, hàm khởi tạo, fixtures, runner và helper
+  thống kê ban đầu được repo cung cấp sẵn khi clone.
+- Bằng chứng: commit `392c513` — `feat: implement Phase C guardrail tasks 9a-12`,
+  chỉ thay đổi `src/phase_c_guard.py` để triển khai các TODO. Bằng chứng chạy
+  thực nghiệm chung của nhóm là `artifacts/guard_results.json`, được Trần Kim
+  Phương tạo trong commit `0ca9880`; phần này ghi nhận đóng góp triển khai của
+  Đinh Kim Thái và dùng artifact chung để đối chiếu kết quả.
+- Cách kiểm tra: chạy `python -m pytest tests/test_phase_c.py -q` để kiểm tra
+  logic bằng fake engines/rails, không gọi API trả phí. Đối chiếu artifact
+  chung với 20 adversarial, 8 clean và 4 output cases trong fixtures;
+  `validate_phase_c(require_quality=True)` và hash nguồn của artifact trên
+  `main` đều đạt. Kết quả batch chung: attacks **20/20**, clean **8/8**,
+  `false_positive_rate=0.0`, output cases **4/4**; phép đo có **20 timed samples**
+  và **2 warm-up**.
+- Điều đã học: cần đánh giá attacks cùng clean controls để phát hiện guard
+  chặn nhầm mọi câu. Quyết định input/output phải lấy từ rail, không suy ra
+  bằng từ khóa trong câu từ chối. Phần async dùng `await` trong vòng lặp và
+  chỉ gọi `asyncio.run` tại ranh giới đồng bộ. P95 của tổng input guard phải
+  tính từ tổng latency từng sample, không cộng P95 riêng của hai tầng.
+- Giới hạn/cách xử lý: artifact chung hiện ghi P95 input guard
+  **4722.165693 ms**, vượt target **500 ms** (`latency_budget_ok=false`);
+  giữ số đo thật và phân tích trong blueprint. Scope là
+  `input_layers_sequential`, chưa đo độ trễ retrieval, generation, NeMo output
+  hay full guard. Bộ 20/8/4 cases và 20 mẫu độ trễ chỉ phản ánh một batch;
+  cần mở rộng kiểm thử trước khi kết luận đủ cho production. Presidio chủ yếu
+  kiểm tra identifiers; yêu cầu lấy dữ liệu cá nhân được xử lý thêm bằng NeMo.
+- Nguồn/AI hỗ trợ nếu có: sử dụng starter, gợi ý TODO, fixtures và tests của
+  repo. Codex hỗ trợ hoàn thiện TODO, rà soát quyết định rail, kiểm thử và đối
+  chiếu bằng chứng. Cấu hình và phần hỗ trợ có sẵn được ghi nhận là nguồn kế
+  thừa; kết quả chung đối chiếu với artifact do người phụ trách thực nghiệm
+  tạo, không tự sửa labels hoặc số đo để đạt ngưỡng.
 
 ## Cập nhật sau khi nộp
 
