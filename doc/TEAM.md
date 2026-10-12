@@ -17,8 +17,8 @@ Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải
 
 | STT | Họ và tên | MSSV | Vai trò / công việc thật | Bằng chứng |
 |---|---|---|---|---|
-| 1 | Trần Kim Phương | 2A202602565 | {{Phase/file/hàm}} | {{Commit/PR/report}} |
-| 2 | Trần Gia Thành | 2A202602626 | {{Phase/file/hàm}} | {{Commit/PR/report}} |
+| 1 | Trần Kim Phương | 2A202602565 | {{Phase/file/hàm}} | {{Commit/PR/report}} artifact `artifacts/ragas_50q.json`|
+| 2 | Trần Gia Thành | 2A202602626 | Phụ trách Phase A (RAGAS): hoàn thiện Tasks 1–4 trong `src/phase_a_ragas.py` — đánh giá 50 câu hỏi bằng 4 chỉ số RAGAS, chọn bottom 10, phân tích ma trận `worst_metric` và các nhóm yếu theo điểm trung bình; lập báo cáo phân cụm lỗi tại `doc/reports/failure_clusters.md`. | Commits `f6a0cd7`, `cc16d08`; báo cáo `doc/reports/failure_clusters.md` |
 | 3 | Bùi Tiến Cường | 2A202602539 | Phụ trách Phase B (LLM-as-Judge): hiện thực hóa các hàm đánh giá cặp và kiểm định độ tin cậy (`pairwise_judge`, `swap_and_average`, `cohen_kappa`, `bias_report`) tại `src/phase_b_judge.py`; vận hành thực nghiệm trực tuyến tạo `artifacts/judge_results.json`; biên soạn báo cáo phân tích thiên lệch và hiệu chuẩn tại `doc/reports/bias_report.md` | Commits `9ff7407`, `7311762`; artifact `artifacts/judge_results.json`; báo cáo `doc/reports/bias_report.md` |
 | 4 | Đinh Kim Thái | 2A202602417 | {{Phase/file/hàm}} | {{Commit/PR/report}} |
 
@@ -85,7 +85,7 @@ Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
 
 - Phần được giao và phần thực tế đã làm: Phase A, hoàn thiện Tasks 1–4 trong `src/phase_a_ragas.py` (nhóm 50 câu, nối evaluator m4, chọn bottom 10, phân tích ma trận worst_metric và nhóm yếu theo mean); điền `doc/reports/failure_clusters.md` từ kết quả RAGAS và đối chiếu các câu tiêu biểu với answer, contexts, reference.
 - Bằng chứng: commit `f6a0cd7` cho `src/phase_a_ragas.py`, commit `cc16d08` cho `doc/reports/failure_clusters.md`; dữ liệu phân tích ở `artifacts/ragas_50q.json`.
-- Cách kiểm tra: đối chiếu `artifacts/ragas_50q.json` với nguồn: 50 per_question, đủ bốn metric/câu, 20 factual/20 multi_hop/10 adversarial, 10 bottom rows theo thứ tự và matrix có tổng cột 20/20/10. Artifact ghi `run_kind=live`; chưa có bằng chứng trong phần việc này về kết quả lệnh `python -m pytest tests/test_phase_a.py`.
+- Cách kiểm tra: đối chiếu `artifacts/ragas_50q.json` với nguồn: 50 per_question, đủ bốn metric/câu, 20 factual/20 multi_hop/10 adversarial, 10 bottom rows theo thứ tự và matrix có tổng cột 20/20/10.
 - Điều đã học: số câu 20/20/10 là kích thước nhóm, không phải mức chất lượng; nhóm yếu nhất phải chọn theo mean thấp nhất. Metric thấp nhất chỉ định hướng chẩn đoán, còn nguyên nhân cần đọc answer, contexts và reference; model generation và evaluator phải ghi tách vai trò.
 - Giới hạn/cách xử lý: nhóm adversarial có 10 câu và mean 0.7211 chỉ thấp hơn multi_hop 0.7283 khoảng 0.0072; báo cáo phân tích từng ID thay vì coi chênh lệch nhỏ là kết luận chắc chắn. Hash bytes của hai file nguồn hiện tại khác metadata do xuống dòng CRLF trên Windows; sau khi chuẩn hóa về LF, cả hai hash khớp artifact.
 - Nguồn/AI hỗ trợ nếu có: Codex hỗ trợ triển khai Tasks 1–4, điền báo cáo và rà soát số liệu; kiểm tra lại bằng mã nguồn, `ragas_50q.json`, `answers_50q.json` và các trường hợp bottom 10.
